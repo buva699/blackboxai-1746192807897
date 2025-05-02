@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SDCKL Attendance System - Attendance Logging</title>
+  <link href="https://cdn.tailwindcss.com" rel="stylesheet" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-r from-red-500 via-white to-red-500 min-h-screen">
+  <nav class="bg-red-700 text-white p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">SDCKL Attendance System</h1>
+    <a href="dashboard.html" class="hover:underline">Dashboard</a>
+  </nav>
+  <main class="p-6 max-w-7xl mx-auto">
+    <h2 class="text-2xl font-semibold mb-6 text-red-900">Attendance Logging</h2>
+    <form id="attendanceForm" class="mb-6 bg-white p-6 rounded shadow space-y-4">
+      <div>
+        <label for="studentId" class="block font-semibold mb-1 text-red-900">Student ID</label>
+        <input type="text" id="studentId" name="studentId" required class="w-full border border-red-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600" />
+      </div>
+      <div>
+        <label for="date" class="block font-semibold mb-1 text-red-900">Date</label>
+        <input type="date" id="date" name="date" required class="w-full border border-red-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600" />
+      </div>
+      <div>
+        <label for="status" class="block font-semibold mb-1 text-red-900">Status</label>
+        <select id="status" name="status" required class="w-full border border-red-400 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-600">
+          <option value="present">Present</option>
+          <option value="late">Late</option>
+          <option value="absent">Absent</option>
+        </select>
+      </div>
+      <button type="submit" class="bg-red-700 text-white px-4 py-2 rounded hover:bg-red-800 transition">Log Attendance</button>
+    </form>
+    <div class="bg-white p-6 rounded shadow">
+      <h3 class="text-xl font-semibold mb-4 text-red-900">Attendance Records</h3>
+      <table class="w-full table-auto border-collapse border border-red-400">
+        <thead>
+          <tr class="bg-red-200">
+            <th class="border border-red-400 px-4 py-2">Student ID</th>
+            <th class="border border-red-400 px-4 py-2">Date</th>
+            <th class="border border-red-400 px-4 py-2">Status</th>
+            <th class="border border-red-400 px-4 py-2">Memo Generated</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const apiBase = '/api/attendance';
+
+    async function fetchAttendance() {
+      const res = await fetch(apiBase);
+      const records = await res.json();
+      const tbody = document.getElementById('attendanceTableBody');
+      tbody.innerHTML = '';
+      records.forEach(record => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="border border-gray-300 px-4 py-2">${record.Student ? record.Student.studentId : ''}</td>
+          <td class="border border-gray-300 px-4 py-2">${new Date(record.date).toLocaleDateString()}</td>
+          <td class="border border-gray-300 px-4 py-2 capitalize">${record.status}</td>
+          <td class="border border-gray-300 px-4 py-2">${record.memoGenerated ? 'Yes' : 'No'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function logAttendance(event) {
+      event.preventDefault();
+      const form = event.target;
+      const data = {
+        studentId: form.studentId.value,
+        date: form.date.value,
+        status: form.status.value,
+      };
+      const res = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        form.reset();
+        fetchAttendance();
+      } else {
+        alert('Failed to log attendance');
+      }
+    }
+
+    document.getElementById('attendanceForm').addEventListener('submit', logAttendance);
+    fetchAttendance();
+  </script>
+</body>
+</html>
