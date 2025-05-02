@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SDCKL Attendance System - Reports</title>
+  <link href="https://cdn.tailwindcss.com" rel="stylesheet" />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-r from-red-500 via-white to-red-500 min-h-screen">
+  <nav class="bg-red-700 text-white p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">SDCKL Attendance System</h1>
+    <a href="dashboard.html" class="hover:underline">Dashboard</a>
+  </nav>
+  <main class="p-6 max-w-7xl mx-auto">
+    <h2 class="text-2xl font-semibold mb-6 text-red-900">Attendance Reports</h2>
+    <div class="bg-white p-6 rounded shadow">
+      <h3 class="text-xl font-semibold mb-4 text-red-900">Student Attendance Summary</h3>
+      <table class="w-full table-auto border-collapse border border-red-400">
+        <thead>
+          <tr class="bg-red-200">
+            <th class="border border-red-400 px-4 py-2">Student ID</th>
+            <th class="border border-red-400 px-4 py-2">Name</th>
+            <th class="border border-red-400 px-4 py-2">Total Present</th>
+            <th class="border border-red-400 px-4 py-2">Total Late</th>
+            <th class="border border-red-400 px-4 py-2">Total Absent</th>
+            <th class="border border-red-400 px-4 py-2">Memos Issued</th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const apiBaseStudents = '/api/students';
+    const apiBaseAttendance = '/api/attendance';
+    const apiBaseMemos = '/api/memos';
+
+    async function fetchReports() {
+      try {
+        const [studentsRes, attendanceRes, memosRes] = await Promise.all([
+          fetch(apiBaseStudents),
+          fetch(apiBaseAttendance),
+          fetch(apiBaseMemos),
+        ]);
+        const [students, attendanceRecords, memos] = await Promise.all([
+          studentsRes.json(),
+          attendanceRes.json(),
+          memosRes.json(),
+        ]);
+
+        const reportData = students.map(student => {
+          const studentAttendance = attendanceRecords.filter(a => a.studentId === student.id);
+          const totalPresent = studentAttendance.filter(a => a.status === 'present').length;
+          const totalLate = studentAttendance.filter(a => a.status === 'late').length;
+          const totalAbsent = studentAttendance.filter(a => a.status === 'absent').length;
+          const memosIssued = memos.filter(m => m.studentId === student.id).length;
+          return {
+            studentId: student.studentId,
+            name: student.firstName + ' ' + student.lastName,
+            totalPresent,
+            totalLate,
+            totalAbsent,
+            memosIssued,
+          };
+        });
+
+        const tbody = document.getElementById('reportTableBody');
+        tbody.innerHTML = '';
+        reportData.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="border border-red-400 px-4 py-2">${row.studentId}</td>
+            <td class="border border-red-400 px-4 py-2">${row.name}</td>
+            <td class="border border-red-400 px-4 py-2">${row.totalPresent}</td>
+            <td class="border border-red-400 px-4 py-2">${row.totalLate}</td>
+            <td class="border border-red-400 px-4 py-2">${row.totalAbsent}</td>
+            <td class="border border-red-400 px-4 py-2">${row.memosIssued}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        alert('Failed to load reports');
+      }
+    }
+
+    fetchReports();
+  </script>
+</body>
+</html>
